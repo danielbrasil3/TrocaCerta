@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import type { CarData } from "@/types/car"
 import carsData from "@/public/dados.json"
 
@@ -7,12 +7,13 @@ import carsData from "@/public/dados.json"
  * Returns all models for a specific brand
  */
 export async function GET(
-  request: Request,
-  { params }: { params: { marca: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ marca: string }> }
 ) {
   try {
     const data: CarData = carsData as CarData
-    const marca = decodeURIComponent(params.marca)
+    const resolvedParams = await params
+    const marca = decodeURIComponent(resolvedParams.marca)
 
     if (!data[marca]) {
       return NextResponse.json(

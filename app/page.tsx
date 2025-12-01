@@ -1,6 +1,7 @@
-"use client"
+'use client'
 
-import { useCarSelector } from "@/hooks/useCarSelector"
+import { useCallback } from 'react'
+import { useCarSelector } from '@/hooks/useCarSelector'
 import { Header } from "@/components/Header"
 import { ProgressBar } from "@/components/ProgressBar"
 import { SearchSection } from "@/components/SearchSection"
@@ -13,10 +14,10 @@ import { MotorSelection } from "@/components/MotorSelection"
 import { ResultsSection } from "@/components/ResultsSection"
 import { Footer } from "@/components/Footer"
 
-
 export default function Home() {
   const {
     carName,
+    searchInput,
     selectedModel,
     selectedYear,
     selectedMotor,
@@ -33,16 +34,38 @@ export default function Home() {
     motorDetails,
     currentStep,
     hasModels,
+    isLoading,
+    error,
     setSelectedModel,
     setSelectedYear,
     setSelectedMotor,
-  } = useCarSelector();
+  } = useCarSelector()
 
+  // Extract inline handlers to prevent re-renders
+  const handleAlterModel = useCallback(() => {
+    setSelectedModel('')
+  }, [setSelectedModel])
+
+  const handleAlterYear = useCallback(() => {
+    setSelectedYear(null)
+    setSelectedMotor(null)
+  }, [setSelectedYear, setSelectedMotor])
+
+  const handleResetMotor = useCallback(() => {
+    setSelectedMotor(null)
+  }, [setSelectedMotor])
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
       <div className="mx-auto max-w-2xl">
         <Header />
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive sm:p-4">
+            <p className="font-medium">Erro</p>
+            <p>{error}</p>
+          </div>
+        )}
 
         {hasModels && <ProgressBar currentStep={currentStep} />}
 
@@ -50,6 +73,7 @@ export default function Home() {
           {!hasModels ? (
             <SearchSection
               carName={carName}
+              searchInput={searchInput}
               searchResults={searchResults}
               onSearch={handleSearch}
               onSelectCar={handleSelectCar}
@@ -59,37 +83,35 @@ export default function Home() {
               <BrandHeader carName={carName} onReset={handleReset} />
 
               {!selectedModel ? (
-                <ModelSelection models={models} onSelectModel={handleSelectModel} />
+                <ModelSelection models={models} onSelectModel={handleSelectModel} isLoading={isLoading} />
               ) : (
                 <div className="space-y-6 animate-in fade-in">
                   <SelectedModelHeader
                     selectedModel={selectedModel}
-                    onAlter={() => setSelectedModel("")}
+                    onAlter={handleAlterModel}
                   />
 
                   {!selectedYear ? (
-                    <YearSelection years={years} onSelectYear={handleSelectYear} />
+                    <YearSelection years={years} onSelectYear={handleSelectYear} isLoading={isLoading} />
                   ) : (
                     <div className="space-y-6 animate-in fade-in">
                       <SelectedYearHeader
                         selectedYear={selectedYear}
-                        onAlter={() => {
-                          setSelectedYear(null)
-                          setSelectedMotor(null)
-                        }}
+                        onAlter={handleAlterYear}
                       />
 
                       {availableMotors.length > 1 && !selectedMotor ? (
                         <MotorSelection
                           motors={availableMotors}
                           onSelectMotor={handleSelectMotor}
+                          isLoading={isLoading}
                         />
                       ) : (
                         <ResultsSection
                           availableMotors={availableMotors}
                           selectedMotor={selectedMotor}
                           motorDetails={motorDetails ?? null}
-                          onResetMotor={() => setSelectedMotor(null)}
+                          onResetMotor={handleResetMotor}
                           onReset={handleReset}
                         />
                       )}

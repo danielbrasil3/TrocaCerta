@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#public files
+public/*
+
+#rules files
+rules/*
+
+#scripts files
+scripts/*

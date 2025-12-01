@@ -1,27 +1,38 @@
-import { Search, ChevronLeft } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { memo, useCallback } from 'react'
+import { Search, ChevronLeft } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 
 interface SearchSectionProps {
   carName: string
+  searchInput: string
   searchResults: string[]
   onSearch: (value: string) => void
   onSelectCar: (car: string) => void
 }
 
-export function SearchSection({
+function SearchSectionComponent({
   carName,
+  searchInput,
   searchResults,
   onSearch,
   onSelectCar,
 }: SearchSectionProps) {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearch(e.target.value)
+  }, [onSearch])
+
+  const createCarClickHandler = useCallback((car: string) => {
+    return () => onSelectCar(car)
+  }, [onSelectCar])
+
   return (
     <div className="space-y-4 sm:space-y-5">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Digite a marca do veículo..."
-          value={carName}
-          onChange={(e) => onSearch(e.target.value)}
+          value={searchInput}
+          onChange={handleInputChange}
           className="h-12 rounded-lg border-border bg-secondary pl-11 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary sm:h-14 sm:rounded-xl sm:pl-12 sm:text-lg"
         />
       </div>
@@ -33,7 +44,7 @@ export function SearchSection({
             {searchResults.map((car) => (
               <button
                 key={car}
-                onClick={() => onSelectCar(car)}
+                onClick={createCarClickHandler(car)}
                 className="group flex items-center justify-between rounded-lg bg-secondary p-3 text-left text-sm transition-all hover:bg-primary hover:text-primary-foreground sm:rounded-xl sm:p-4 sm:text-base"
               >
                 <span className="font-medium">{car}</span>
@@ -52,3 +63,5 @@ export function SearchSection({
     </div>
   )
 }
+
+export const SearchSection = memo(SearchSectionComponent)

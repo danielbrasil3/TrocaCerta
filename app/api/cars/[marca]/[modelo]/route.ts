@@ -1,42 +1,50 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { CarData } from "@/types/car"
-import carsData from "@/public/dados.json"
+import { getYearsByModel } from "@/lib/services/carService"
+import { validateCarName } from "@/lib/validation"
 
 /**
  * GET /api/cars/[marca]/[modelo]
- * Returns all years and motor info for a specific model
+ * Returns all years available for a specific model
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ marca: string; modelo: string }> }
 ) {
   try {
-    const data: CarData = carsData as CarData
     const resolvedParams = await params
-    const marca = decodeURIComponent(resolvedParams.marca)
-    const modelo = decodeURIComponent(resolvedParams.modelo)
+    const decodedMarca = decodeURIComponent(resolvedParams.marca)
+    const decodedModelo = decodeURIComponent(resolvedParams.modelo)
 
-    if (!data[marca]) {
+    // Validate inputs
+    const marca = validateCarName(decodedMarca)
+    const modelo = validateCarName(decodedModelo)
+    
+    if (!marca || !modelo) {
       return NextResponse.json(
-        { error: `Brand "${marca}" not found` },
+        { error: "Invalid brand or model name" },
+        { status: 400 }
+      )
+    }
+
+    const years = await getYearsByModel(marca, modelo)
+
+    if (!years || years.length === 0) {
+      return NextResponse.json(
+        { error: "Model not found" },
         { status: 404 }
       )
     }
 
-    if (!data[marca][modelo]) {
-      return NextResponse.json(
-        { error: `Model "${modelo}" not found for brand "${marca}"` },
-        { status: 404 }
-      )
-    }
-
-    const modelData = data[marca][modelo]
-    return NextResponse.json(modelData, {
+    return NextResponse.json(years, {
       headers: {
         "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
       },
     })
   } catch (error) {
+    // Log error but don't expose details to client
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error fetching years:", error)
+    }
     return NextResponse.json(
       { error: "Failed to fetch model data" },
       { status: 500 }

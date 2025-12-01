@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { CarData, MotorInfo } from "@/types/car"
-import carsData from "@/public/dados.json"
+import type { MotorInfo } from "@/types/car"
+import { getMotorsByModelAndYear } from "@/lib/services/carService"
+import { validateCarName, validateYear } from "@/lib/validation"
 
 /**
  * GET /api/cars/[marca]/[modelo]/[ano]
@@ -13,41 +14,42 @@ export async function GET(
   }: { params: Promise<{ marca: string; modelo: string; ano: string }> }
 ) {
   try {
-    const data: CarData = carsData as CarData
     const resolvedParams = await params
-    const marca = decodeURIComponent(resolvedParams.marca)
-    const modelo = decodeURIComponent(resolvedParams.modelo)
+    const decodedMarca = decodeURIComponent(resolvedParams.marca)
+    const decodedModelo = decodeURIComponent(resolvedParams.modelo)
     const ano = resolvedParams.ano
 
-    if (!data[marca]) {
+    // Validate inputs
+    const marca = validateCarName(decodedMarca)
+    const modelo = validateCarName(decodedModelo)
+    const validatedYear = validateYear(ano)
+    
+    if (!marca || !modelo || !validatedYear) {
       return NextResponse.json(
-        { error: `Brand "${marca}" not found` },
+        { error: "Invalid brand, model, or year" },
+        { status: 400 }
+      )
+    }
+
+    const motors = await getMotorsByModelAndYear(marca, modelo, validatedYear)
+
+    if (!motors || motors.length === 0) {
+      return NextResponse.json(
+        { error: "No motors found" },
         { status: 404 }
       )
     }
 
-    if (!data[marca][modelo]) {
-      return NextResponse.json(
-        { error: `Model "${modelo}" not found` },
-        { status: 404 }
-      )
-    }
-
-    const modelData = data[marca][modelo]
-    if (!modelData[ano]) {
-      return NextResponse.json(
-        { error: `Year "${ano}" not found` },
-        { status: 404 }
-      )
-    }
-
-    const motors: MotorInfo[] = modelData[ano]
     return NextResponse.json(motors, {
       headers: {
         "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
       },
     })
   } catch (error) {
+    // Log error but don't expose details to client
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error fetching motors:", error)
+    }
     return NextResponse.json(
       { error: "Failed to fetch year data" },
       { status: 500 }

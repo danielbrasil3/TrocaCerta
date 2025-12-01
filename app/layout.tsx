@@ -1,14 +1,15 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
+import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Guia de Manutenção Automotiva",
-  description: "Encontre as especificações de óleo e filtros do seu veículo",
+  title: 'Guia de Manutenção Automotiva',
+  description: 'Encontre as especificações de óleo e filtros do seu veículo',
 }
 
 export default function RootLayout({
@@ -18,8 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`font-sans antialiased`}>
-        {children}
+      <body className="font-sans antialiased">
+        <ErrorBoundaryWrapper>
+          {children}
+        </ErrorBoundaryWrapper>
       </body>
     </html>
   )

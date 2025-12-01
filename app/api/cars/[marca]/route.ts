@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { CarData } from "@/types/car"
-import carsData from "@/public/dados.json"
+import { getCarsByBrand } from "@/lib/services/carService"
+import { validateCarName } from "@/lib/validation"
 
 /**
  * GET /api/cars/[marca]
@@ -11,24 +11,37 @@ export async function GET(
   { params }: { params: Promise<{ marca: string }> }
 ) {
   try {
-    const data: CarData = carsData as CarData
     const resolvedParams = await params
-    const marca = decodeURIComponent(resolvedParams.marca)
-
-    if (!data[marca]) {
+    const decodedMarca = decodeURIComponent(resolvedParams.marca)
+    
+    // Validate input
+    const marca = validateCarName(decodedMarca)
+    if (!marca) {
       return NextResponse.json(
-        { error: `Brand "${marca}" not found` },
+        { error: "Invalid brand name" },
+        { status: 400 }
+      )
+    }
+
+    const models = await getCarsByBrand(marca)
+
+    if (!models || models.length === 0) {
+      return NextResponse.json(
+        { error: "Brand not found" },
         { status: 404 }
       )
     }
 
-    const models = data[marca]
     return NextResponse.json(models, {
       headers: {
         "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
       },
     })
   } catch (error) {
+    // Log error but don't expose details to client
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Error fetching models:", error)
+    }
     return NextResponse.json(
       { error: "Failed to fetch brand data" },
       { status: 500 }

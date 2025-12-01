@@ -1,5 +1,5 @@
 interface SelectedYearHeaderProps {
-  selectedYear: number
+  selectedYear: string
   onAlter: () => void
 }
 

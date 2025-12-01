@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className="font-sans antialiased">
+        <SpeedInsights />
         <ErrorBoundaryWrapper>
           {children}
         </ErrorBoundaryWrapper>
